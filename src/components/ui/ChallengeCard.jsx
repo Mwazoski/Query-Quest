@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 
 
-export function ExerciseCard() {
+export function ChallengeCard() {
   return (
     (<BentoGrid className="max-w-4xl mx-auto">
       {items.map((item, i) => (

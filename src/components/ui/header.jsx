@@ -38,7 +38,7 @@ export default function Header() {
               <nav className="hidden md:ml-6 md:flex md:space-x-8">
                 <NavLink href="/main">Home</NavLink>
                 <NavLink href="/lessons">Lessons</NavLink>
-                <NavLink href="/exercises">Exercises</NavLink>
+                <NavLink href="/challenges">Challenges</NavLink>
                 <NavLink href="/playground">SQL Playground</NavLink>
               </nav>
             </div>
