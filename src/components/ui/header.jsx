@@ -44,6 +44,9 @@ export default function Header() {
             </div>
           </div>
           <div className="hidden md:ml-4 md:flex md:items-center">
+            <div className="mr-3">
+              <div className="text-base font-medium">wazos</div>
+            </div>
             <UserMenu />
           </div>
           <div className="flex md:hidden">

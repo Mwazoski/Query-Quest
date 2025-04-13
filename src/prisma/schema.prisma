@@ -1,0 +1,77 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Institution {
+  id      Int    @id @default(autoincrement())
+  name    String
+  address String?
+  users   User[]
+}
+
+model User {
+  id               Int    @id @default(autoincrement())
+  name             String
+  isEmailVerified  Boolean @default(false)
+  password         String
+  isTeacher        Boolean @default(false)
+  isAdmin          Boolean @default(false)
+  solvedChallenges Int     @default(0)
+  points           Int     @default(0)
+  tutorial         Boolean @default(false)
+  alias            String?
+  institution_id   Int?
+  institution      Institution? @relation(fields: [institution_id], references: [id])
+  logs             Log[]
+  userChallenges   UserChallenge[]
+}
+
+model Challenge {
+  id           Int             @id @default(autoincrement())
+  statement    String
+  help         String?
+  solution     String
+  level        Int
+  score        Int
+  score_base   Int
+  score_min    Int
+  solves       Int             @default(0)
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+  logs         Log[]
+  userChallenges UserChallenge[]
+}
+
+model Log {
+  id          Int      @id @default(autoincrement())
+  uuidTrial   String
+  request     String
+  response    String?
+  error_code  Int?
+  isCompleted Boolean   @default(false)
+  timestamp   DateTime  @default(now())
+
+  challenge_id Int
+  challenge    Challenge @relation(fields: [challenge_id], references: [id])
+
+  user_id      Int
+  user         User      @relation(fields: [user_id], references: [id])
+}
+
+model UserChallenge {
+  id          Int      @id @default(autoincrement())
+  score       Int
+  trials      Int       @default(0)
+  created_at  DateTime  @default(now())
+
+  user_id      Int
+  user         User      @relation(fields: [user_id], references: [id])
+
+  challenge_id Int
+  challenge    Challenge @relation(fields: [challenge_id], references: [id])
+}

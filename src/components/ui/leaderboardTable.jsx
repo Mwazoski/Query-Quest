@@ -66,7 +66,7 @@ const user_scores = [
 
 export function LeaderboardTable() {
   return (
-    <div className="container w-4/5 mx-auto mt-10 mb-10 px-4 sm:px-6 lg:px-8">
+    <div className="container w-3/5 mx-auto mt-10 mb-10 px-4 sm:px-6 lg:px-8">
       <Table>
         <TableHeader>
           <TableRow>
