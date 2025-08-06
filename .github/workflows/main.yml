@@ -22,11 +22,16 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
+      - name: Change to src directory
+        run: cd src
+
       - name: Install dependencies
         run: npm ci
+        working-directory: ./src
 
       - name: Build application
         run: npm run build
+        working-directory: ./src
         env:
           NODE_ENV: production
 
@@ -37,3 +42,4 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
+          working-directory: ./src
