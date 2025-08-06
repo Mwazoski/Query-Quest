@@ -34,3 +34,38 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Email Verification Setup
+
+This application includes email verification functionality. To set up email sending:
+
+### For Development (Mock Emails)
+The application currently uses mock email sending for development. Verification links will be logged to the console.
+
+### For Production
+1. Set up environment variables in your `.env.local` file:
+   ```
+   EMAIL_USER="your-email@gmail.com"
+   EMAIL_PASS="your-app-password"
+   NEXT_PUBLIC_APP_URL="https://your-domain.com"
+   ```
+
+2. For Gmail, you'll need to:
+   - Enable 2-factor authentication
+   - Generate an App Password
+   - Use the App Password as `EMAIL_PASS`
+
+3. Update `src/lib/email.js` to use the real email function instead of the mock one:
+   ```javascript
+   // In src/app/api/users/route.js, change:
+   const emailSent = await sendMockVerificationEmail(email, name, verificationToken);
+   // To:
+   const emailSent = await sendVerificationEmail(email, name, verificationToken);
+   ```
+
+### Email Verification Flow
+1. User registers with email and password
+2. System generates a verification token and sends an email
+3. User clicks the verification link in their email
+4. System verifies the token and marks the email as verified
+5. User can now log in to the application

@@ -44,12 +44,12 @@ const chartConfig = {
 
 export function LeaderBoard() {
   return (
-    <div className="container w-3/5 mx-auto mt-10 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-center mb-10">
+    <div className="w-full max-w-4xl mx-auto mt-6 lg:mt-10 px-4 sm:px-6 lg:px-8">
+      <h1 className="text-2xl lg:text-3xl font-bold text-center mb-6 lg:mb-10">
         Students Leaderboard
       </h1>
       <Card>
-        <CardContent>
+        <CardContent className="p-4 lg:p-6">
           <ChartContainer config={chartConfig}>
             <LineChart
               accessibilityLayer
@@ -86,10 +86,9 @@ export function LeaderBoard() {
           </ChartContainer>
         </CardContent>
       </Card>
-      <div className="m-10">
+      <div className="mt-6 lg:mt-10">
         <Separator></Separator>
       </div>
-      <div></div>
     </div>
   );
 }

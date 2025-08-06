@@ -66,25 +66,27 @@ const user_scores = [
 
 export function LeaderboardTable() {
   return (
-    <div className="container w-3/5 mx-auto mt-10 mb-10 px-4 sm:px-6 lg:px-8">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">Rank</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Scores</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {user_scores.map((user_score) => (
-            <TableRow key={user_score.rank}>
-              <TableCell className="font-medium">{user_score.rank}</TableCell>
-              <TableCell>{user_score.username}</TableCell>
-              <TableCell>{user_score.score}</TableCell>
+    <div className="w-full max-w-4xl mx-auto mt-6 lg:mt-10 mb-6 lg:mb-10 px-4 sm:px-6 lg:px-8">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[80px] lg:w-[100px]">Rank</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Scores</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {user_scores.map((user_score) => (
+              <TableRow key={user_score.rank}>
+                <TableCell className="font-medium">{user_score.rank}</TableCell>
+                <TableCell>{user_score.username}</TableCell>
+                <TableCell>{user_score.score}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

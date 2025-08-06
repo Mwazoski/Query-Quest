@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request, { params }) {
-  const id = Number(params.id);
+  const { id } = await params;
+  const logId = Number(id);
   const log = await prisma.log.findUnique({
-    where: { id },
+    where: { id: logId },
     include: { challenge: true, user: true }
   });
 
