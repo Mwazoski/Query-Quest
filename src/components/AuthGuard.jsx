@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function AuthGuard({ children }) {
@@ -10,7 +10,7 @@ export default function AuthGuard({ children }) {
   const pathname = usePathname();
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/terms", "/privacy", "/verify-email"];
+  const publicRoutes = useMemo(() => ["/", "/terms", "/privacy", "/verify-email"], []);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -46,7 +46,7 @@ export default function AuthGuard({ children }) {
         router.push("/");
       }
     }
-  }, [isAuthenticated, isLoading, pathname, router]);
+  }, [isAuthenticated, isLoading, pathname, router, publicRoutes]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {

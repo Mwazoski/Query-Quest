@@ -161,7 +161,7 @@ export default function Challenges() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md mx-auto">
                 <h3 className="text-lg font-medium text-yellow-800 mb-2">No Institution Assigned</h3>
                 <p className="text-yellow-700 mb-4">
-                  You don't have an institution assigned. Please contact your administrator to get access to challenges.
+                  You don&apos;t have an institution assigned. Please contact your administrator to get access to challenges.
                 </p>
               </div>
             </div>

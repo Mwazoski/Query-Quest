@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,9 +29,9 @@ export default function EditLesson() {
 
   useEffect(() => {
     fetchUserAndLesson();
-  }, [params.id]);
+  }, [fetchUserAndLesson]);
 
-  const fetchUserAndLesson = async () => {
+  const fetchUserAndLesson = useCallback(async () => {
     try {
       // Get user data from localStorage
       const userData = localStorage.getItem('user');
@@ -58,7 +58,7 @@ export default function EditLesson() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id]);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {

@@ -67,7 +67,7 @@ export default function ContactForm({ onClose, userEmail = "" }) {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Submitted!</h3>
             <p className="text-gray-600 mb-4">
-              Thank you for your interest. We'll review your institution's request and contact you soon.
+              Thank you for your interest. We&apos;ll review your institution&apos;s request and contact you soon.
             </p>
             <Button onClick={onClose} className="w-full">
               Close

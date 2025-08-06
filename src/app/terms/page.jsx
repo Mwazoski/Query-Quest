@@ -19,7 +19,7 @@ export default function TermsOfService() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
               <p className="text-gray-700 mb-4">
-                By accessing and using QueryQuest ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+                By accessing and using QueryQuest (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
               </p>
             </section>
 
@@ -58,7 +58,7 @@ export default function TermsOfService() {
               <ul className="list-disc pl-6 text-gray-700 mb-4">
                 <li>Violate any applicable laws or regulations</li>
                 <li>Infringe upon the rights of others</li>
-                <li>Attempt to gain unauthorized access to the Service or other users' accounts</li>
+                <li>Attempt to gain unauthorized access to the Service or other users&apos; accounts</li>
                 <li>Use the Service for any commercial purpose without our written consent</li>
                 <li>Upload or transmit malicious code, viruses, or harmful content</li>
                 <li>Interfere with or disrupt the Service or servers</li>
@@ -102,7 +102,7 @@ export default function TermsOfService() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">9. Disclaimer</h2>
               <p className="text-gray-700 mb-4">
-                The Service is provided on an "AS IS" and "AS AVAILABLE" basis. QueryQuest makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
+                The Service is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. QueryQuest makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
               </p>
             </section>
 

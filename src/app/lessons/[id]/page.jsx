@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,9 +26,9 @@ export default function LessonDetail() {
 
   useEffect(() => {
     fetchLesson();
-  }, [params.id]);
+  }, [fetchLesson]);
 
-  const fetchLesson = async () => {
+  const fetchLesson = useCallback(async () => {
     try {
       const response = await fetch(`/api/lessons/${params.id}`);
       if (response.ok) {
@@ -43,7 +43,7 @@ export default function LessonDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
