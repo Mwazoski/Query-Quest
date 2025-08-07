@@ -19,7 +19,7 @@ export async function POST(request) {
       isEmailVerified: false,
       solvedChallenges: 0,
       points: 0,
-      tutorial: false,
+      
       institution_id: user.institution_id || null
     }));
 

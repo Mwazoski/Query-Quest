@@ -28,7 +28,6 @@ export default function AdminSettings() {
     maxUsersPerInstitution: 1000,
     defaultUserRole: "student",
     enableEmailVerification: false,
-    enableTutorial: true,
     maintenanceMode: false,
     theme: "light",
     language: "en",
@@ -214,19 +213,7 @@ export default function AdminSettings() {
               </Button>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Tutorial Mode</Label>
-                <p className="text-sm text-muted-foreground">Show tutorial for new users</p>
-              </div>
-              <Button
-                variant={settings.enableTutorial ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSettings({ ...settings, enableTutorial: !settings.enableTutorial })}
-              >
-                {settings.enableTutorial ? "Enabled" : "Disabled"}
-              </Button>
-            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="maxChallengesPerUser">Max Challenges per User</Label>

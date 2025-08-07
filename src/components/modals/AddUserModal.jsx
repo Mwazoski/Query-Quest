@@ -9,7 +9,6 @@ import InstitutionModal from './InstitutionModal';
 export default function AddUserModal({ institutions, onSave, onClose, onInstitutionAdded }) {
   const [formData, setFormData] = useState({
     name: "",
-    alias: "",
     email: "",
     password: "",
     institution_id: "none",
@@ -107,16 +106,6 @@ export default function AddUserModal({ institutions, onSave, onClose, onInstitut
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                   placeholder="Enter full name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="alias">Alias</Label>
-                <Input
-                  id="alias"
-                  value={formData.alias}
-                  onChange={(e) => setFormData({ ...formData, alias: e.target.value })}
-                  placeholder="Enter alias (optional)"
                 />
               </div>
 

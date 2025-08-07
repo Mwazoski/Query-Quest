@@ -36,7 +36,7 @@ export async function POST(request) {
         isEmailVerified: false,
         solvedChallenges: 0,
         points: 0,
-        tutorial: false
+
       }));
 
     return NextResponse.json({ users: validatedUsers });

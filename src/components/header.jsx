@@ -27,9 +27,22 @@ export default function Header() {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear localStorage and redirect
+      localStorage.removeItem("user");
+      router.push("/");
+    }
   };
 
   useEffect(() => {

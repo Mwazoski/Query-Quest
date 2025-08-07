@@ -39,13 +39,39 @@ export async function POST(request) {
       );
     }
 
+    // Update last login time
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { last_login: new Date() }
+    });
+
     // Remove password from response for security
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
+    // Create response with user data
+    const response = NextResponse.json({
       user: userWithoutPassword,
       message: "Login successful"
     });
+
+    // Set authentication cookies for middleware
+    response.cookies.set('user', JSON.stringify(userWithoutPassword), {
+      httpOnly: false, // Allow client-side access
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    });
+
+    response.cookies.set('auth-token', `user-${user.id}`, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    });
+
+    return response;
 
   } catch (error) {
     console.error("Error during login:", error);

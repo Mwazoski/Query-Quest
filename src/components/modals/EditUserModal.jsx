@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function EditUserModal({ user, institutions, onSave, onClose }) {
   const [formData, setFormData] = useState({
     name: user.name || "",
-    alias: user.alias || "",
+    email: user.email || "",
     institution_id: user.institution_id?.toString() || "none",
     isAdmin: user.isAdmin || false,
     isTeacher: user.isTeacher || false,
@@ -38,11 +38,13 @@ export default function EditUserModal({ user, institutions, onSave, onClose }) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="alias">Alias</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="alias"
-              value={formData.alias}
-              onChange={(e) => setFormData({ ...formData, alias: e.target.value })}
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
             />
           </div>
           

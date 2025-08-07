@@ -1,48 +1,152 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Create sample institutions
-  const institution1 = await prisma.institution.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
+  // Create 6 institutions
+  const institutions = [
+    {
       name: 'Universidad de Cádiz',
       address: 'Calle Ancha, 16, 11001 Cádiz, Spain',
       studentEmailSuffix: '@alum.uca.es',
       teacherEmailSuffix: '@uca.es'
     },
-  });
-
-  const institution2 = await prisma.institution.upsert({
-    where: { id: 2 },
-    update: {},
-    create: {
-      id: 2,
+    {
       name: 'Universidad de Sevilla',
       address: 'Calle San Fernando, 4, 41004 Sevilla, Spain',
       studentEmailSuffix: '@alum.us.es',
       teacherEmailSuffix: '@us.es'
     },
-  });
-
-  const institution3 = await prisma.institution.upsert({
-    where: { id: 3 },
-    update: {},
-    create: {
-      id: 3,
+    {
       name: 'Tech University',
       address: '123 Tech Street, Silicon Valley, CA',
       studentEmailSuffix: '@student.tech.edu',
       teacherEmailSuffix: '@tech.edu'
     },
-  });
+    {
+      name: 'Business School Madrid',
+      address: 'Calle Gran Vía, 28, 28013 Madrid, Spain',
+      studentEmailSuffix: '@student.bsm.edu',
+      teacherEmailSuffix: '@bsm.edu'
+    },
+    {
+      name: 'Engineering Institute Barcelona',
+      address: 'Carrer de la Pau, 15, 08001 Barcelona, Spain',
+      studentEmailSuffix: '@student.eib.edu',
+      teacherEmailSuffix: '@eib.edu'
+    },
+    {
+      name: 'Computer Science Academy',
+      address: '456 Innovation Drive, San Francisco, CA',
+      studentEmailSuffix: '@student.csa.edu',
+      teacherEmailSuffix: '@csa.edu'
+    }
+  ];
+
+  const createdInstitutions = [];
+  for (let i = 0; i < institutions.length; i++) {
+    const institution = await prisma.institution.upsert({
+      where: { id: i + 1 },
+      update: {},
+      create: {
+        id: i + 1,
+        ...institutions[i]
+      },
+    });
+    createdInstitutions.push(institution);
+  }
 
   console.log('✅ Institutions created');
+
+  // Create users for each institution (20 students + 1 teacher per institution)
+  const userNames = [
+    'Ana García', 'Carlos López', 'María Rodríguez', 'Juan Martínez', 'Laura Fernández',
+    'David González', 'Sofia Pérez', 'Miguel Torres', 'Elena Ruiz', 'Roberto Jiménez',
+    'Carmen Moreno', 'Antonio Silva', 'Isabel Vargas', 'Francisco Castro', 'Lucía Morales',
+    'Javier Herrera', 'Patricia Luna', 'Ricardo Mendoza', 'Adriana Rojas', 'Fernando Ortega',
+    'Dr. Elena Sánchez', 'Prof. Carlos Mendez', 'Dr. María Johnson', 'Prof. David Wilson',
+    'Dr. Laura Brown', 'Prof. Miguel Davis'
+  ];
+
+  let userId = 1;
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  for (let institutionIndex = 0; institutionIndex < createdInstitutions.length; institutionIndex++) {
+    const institution = createdInstitutions[institutionIndex];
+    
+    // Create 20 students for this institution
+    for (let studentIndex = 0; studentIndex < 20; studentIndex++) {
+      const nameIndex = studentIndex + (institutionIndex * 20);
+      const name = userNames[nameIndex % 20]; // Cycle through first 20 names for students
+      const email = `student${studentIndex + 1}${institution.studentEmailSuffix}`;
+      
+      await prisma.user.upsert({
+        where: { id: userId },
+        update: {},
+        create: {
+          id: userId,
+          name: name,
+          email: email,
+          password: hashedPassword,
+          isEmailVerified: true,
+          isTeacher: false,
+          isAdmin: false,
+          solvedChallenges: Math.floor(Math.random() * 15),
+          points: Math.floor(Math.random() * 500),
+          last_login: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random login within last 7 days
+          institution_id: institution.id
+        },
+      });
+      userId++;
+    }
+
+    // Create 1 teacher for this institution
+    const teacherName = userNames[20 + institutionIndex]; // Use names 21-26 for teachers
+    const teacherEmail = `teacher${institutionIndex + 1}${institution.teacherEmailSuffix}`;
+    
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: {},
+      create: {
+        id: userId,
+        name: teacherName,
+        email: teacherEmail,
+        password: hashedPassword,
+        isEmailVerified: true,
+        isTeacher: true,
+        isAdmin: false,
+        solvedChallenges: Math.floor(Math.random() * 25),
+        points: Math.floor(Math.random() * 800),
+        last_login: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000), // Random login within last 3 days
+        institution_id: institution.id
+      },
+    });
+    userId++;
+  }
+
+  // Create admin user
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: {},
+    create: {
+      id: userId,
+      name: 'Admin User',
+      email: 'admin@queryquest.com',
+      password: hashedPassword,
+      isEmailVerified: true,
+      isTeacher: false,
+      isAdmin: true,
+      solvedChallenges: 50,
+      points: 1500,
+      last_login: new Date(),
+      institution_id: null
+    },
+  });
+
+  console.log('✅ Users created (120 students + 6 teachers + 1 admin)');
 
   // Create sample challenges
   const challenges = [
@@ -104,7 +208,7 @@ async function main() {
       score: 150,
       score_base: 150,
       score_min: 75,
-      institution_id: 1
+      institution_id: 2
     },
     {
       statement: "Create a query to identify products that have never been ordered by any customer.",
@@ -114,7 +218,7 @@ async function main() {
       score: 200,
       score_base: 200,
       score_min: 100,
-      institution_id: 3
+      institution_id: 4
     },
     {
       statement: "Write a query to find the month with the highest total sales for each year in the last 5 years.",
@@ -124,7 +228,7 @@ async function main() {
       score: 300,
       score_base: 300,
       score_min: 150,
-      institution_id: 3
+      institution_id: 5
     }
   ];
 
@@ -197,7 +301,7 @@ Remember: SQL is not case-sensitive, but it's a good practice to write keywords 
       order: 1,
       isPublished: true,
       institution_id: 1,
-      creator_id: 1
+      creator_id: 21 // First teacher
     },
     {
       title: "Advanced SQL Joins",
@@ -278,8 +382,8 @@ LEFT JOIN employees e2 ON e1.manager_id = e2.employee_id;
       description: "Master different types of SQL joins for complex data relationships",
       order: 2,
       isPublished: true,
-      institution_id: 1,
-      creator_id: 1
+      institution_id: 2,
+      creator_id: 42 // Second teacher
     },
     {
       title: "SQL Aggregation Functions",
@@ -384,8 +488,8 @@ GROUP BY department;
       description: "Learn to use aggregation functions for data analysis and reporting",
       order: 3,
       isPublished: true,
-      institution_id: 1,
-      creator_id: 1
+      institution_id: 3,
+      creator_id: 63 // Third teacher
     }
   ];
 
@@ -398,6 +502,12 @@ GROUP BY department;
   console.log('✅ Lessons created');
 
   console.log('🎉 Database seeding completed!');
+  console.log(`📊 Created ${createdInstitutions.length} institutions`);
+  console.log(`👥 Created ${createdInstitutions.length * 20} students`);
+  console.log(`👨‍🏫 Created ${createdInstitutions.length} teachers`);
+  console.log(`👑 Created 1 admin user`);
+  console.log(`📚 Created ${challenges.length} challenges`);
+  console.log(`📖 Created ${lessons.length} lessons`);
 }
 
 main()

@@ -49,10 +49,10 @@ export default function InstitutionsManagement() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/users");
+      const response = await fetch("/api/users?limit=1000");
       if (response.ok) {
         const usersData = await response.json();
-        setUsers(usersData);
+        setUsers(usersData.users || usersData); // Handle new API response format
       }
     } catch (error) {
       console.error("Error fetching users:", error);

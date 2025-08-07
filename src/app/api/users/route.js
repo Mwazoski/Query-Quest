@@ -1,21 +1,79 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateVerificationToken, sendMockVerificationEmail } from "@/lib/email";
-import { validateEmailDomain } from "@/lib/institution-utils";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 25;
+    const search = searchParams.get('search') || '';
+    const role = searchParams.get('role') || '';
+    const institution = searchParams.get('institution') || '';
+
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+
+    // Build where clause for filtering
+    const where = {};
+
+    // Search filter - use contains for SQLite compatibility
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+
+    // Role filter
+    if (role === 'admin') {
+      where.isAdmin = true;
+    } else if (role === 'teacher') {
+      where.isTeacher = true;
+      where.isAdmin = false;
+    } else if (role === 'student') {
+      where.isAdmin = false;
+      where.isTeacher = false;
+    }
+
+    // Institution filter
+    if (institution && institution !== 'all') {
+      where.institution_id = parseInt(institution);
+    }
+
+    // Get total count for pagination
+    const totalUsers = await prisma.user.count({ where });
+
+    // Get users with pagination and filtering
     const users = await prisma.user.findMany({
+      where,
       include: {
         institution: true,
       },
       orderBy: {
         name: 'asc',
       },
+      skip,
+      take: limit,
     });
-    return NextResponse.json(users);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalUsers / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return NextResponse.json({
+      users,
+      pagination: {
+        page,
+        limit,
+        totalUsers,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+      },
+    });
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch users" },
       { status: 500 }
@@ -26,76 +84,43 @@ export async function GET() {
 export async function POST(request) {
   try {
     const data = await request.json();
-    const { name, alias, email, password, institution_id, isAdmin, isTeacher } = data;
-
-    // Validate required fields
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Name, email, and password are required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email domain and determine role/institution
-    const emailValidation = await validateEmailDomain(email);
-    
-    if (!emailValidation.isValid) {
-      return NextResponse.json(
-        { error: emailValidation.message },
-        { status: 400 }
-      );
-    }
+    const { name, email, password, institution_id, isAdmin, isTeacher } = data;
 
     // Check if email already exists
-    const existingUser = await prisma.user.findFirst({
-      where: { email: email.toLowerCase() }
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
+        { error: "Email already exists" },
         { status: 400 }
       );
     }
 
-    // Generate verification token
-    const verificationToken = generateVerificationToken();
+    // Hash password (you should use bcrypt or similar)
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user with auto-detected role and institution
     const newUser = await prisma.user.create({
       data: {
         name,
-        alias: alias || null,
-        email: email.toLowerCase(),
-        password, // In a real app, you'd hash this password
-        verificationToken,
-        institution_id: emailValidation.institution.id,
+        email,
+        password: hashedPassword,
+        institution_id: institution_id && institution_id !== "none" ? parseInt(institution_id) : null,
         isAdmin: isAdmin || false,
-        isTeacher: emailValidation.role === 'teacher',
-        points: 0,
-        solvedChallenges: 0,
+        isTeacher: isTeacher || false,
       },
       include: {
         institution: true,
       },
     });
 
-    // Send verification email
-    const emailSent = await sendMockVerificationEmail(email, name, verificationToken);
-    
-    if (!emailSent) {
-      // If email fails, we should still create the user but notify about the issue
-      console.warn("Failed to send verification email to:", email);
-    }
-
-    // Return success response without sensitive data
-    const { password: _, verificationToken: __, ...userResponse } = newUser;
-    return NextResponse.json({
-      ...userResponse,
-      message: "Registration successful! Please check your email to verify your account."
-    }, { status: 201 });
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = newUser;
+    return NextResponse.json(userWithoutPassword);
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 }

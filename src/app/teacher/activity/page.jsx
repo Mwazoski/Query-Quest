@@ -136,7 +136,7 @@ export default function TeacherActivity() {
             id: `student-${student.id}-5`,
             type: 'student',
             student: student.name,
-            action: 'completed tutorial',
+            action: 'completed onboarding',
             time: '1 week ago',
             timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
           }

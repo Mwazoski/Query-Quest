@@ -14,6 +14,7 @@ export default function AuthGuard({ children }) {
 
   useEffect(() => {
     const checkAuth = () => {
+      // Check both localStorage and cookies for user data
       const user = localStorage.getItem("user");
       
       if (user) {
@@ -29,6 +30,12 @@ export default function AuthGuard({ children }) {
           setIsAuthenticated(false);
         }
       } else {
+        // If no localStorage data, check if we're on a public route
+        // If not on public route, redirect to login
+        const isPublicRoute = publicRoutes.includes(pathname);
+        if (!isPublicRoute) {
+          router.push("/");
+        }
         setIsAuthenticated(false);
       }
       
@@ -36,7 +43,7 @@ export default function AuthGuard({ children }) {
     };
 
     checkAuth();
-  }, []);
+  }, [pathname, router, publicRoutes]);
 
   useEffect(() => {
     if (!isLoading) {

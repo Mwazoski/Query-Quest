@@ -31,7 +31,7 @@ export default function TeacherChallenges() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const fetchChallenges = useCallback(async (userData = user) => {
+  const fetchChallenges = useCallback(async (userData) => {
     try {
       if (!userData || !userData.institution_id) {
         console.log("No user data or institution_id available");
@@ -48,7 +48,7 @@ export default function TeacherChallenges() {
     } catch (error) {
       console.error("Error fetching challenges:", error);
     }
-  }, [user]);
+  }, []);
 
   const fetchTeacherData = useCallback(async () => {
     try {
@@ -103,7 +103,7 @@ export default function TeacherChallenges() {
       });
 
       if (response.ok) {
-        await fetchChallenges(); // Refresh the list
+        await fetchChallenges(user); // Refresh the list
         setIsEditModalOpen(false);
         setSelectedChallenge(null);
       } else {
@@ -131,7 +131,7 @@ export default function TeacherChallenges() {
       });
 
       if (response.ok) {
-        await fetchChallenges(); // Refresh the list
+        await fetchChallenges(user); // Refresh the list
         setIsCreateModalOpen(false);
       } else {
         const errorData = await response.json();

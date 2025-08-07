@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination } from "@/components/ui/pagination";
 import { 
   Users, 
   Search, 
@@ -18,41 +21,96 @@ import {
   MoreHorizontal,
   Upload,
   FileText,
-  X
+  X,
+  Check,
+  Mail,
+  Calendar
 } from "lucide-react";
-import { ImportUsersModal, AddUserModal, EditUserModal, InstitutionModal } from "@/components/modals";
+import { ImportUsersModal, AddUserModal, EditUserModal, InstitutionModal, ConfirmModal } from "@/components/modals";
 
 export default function UsersManagement() {
   const [users, setUsers] = useState([]);
   const [institutions, setInstitutions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [institutionFilter, setInstitutionFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importFile, setImportFile] = useState(null);
-  const [importPreview, setImportPreview] = useState([]);
-  const [isImporting, setIsImporting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [pagination, setPagination] = useState({
+    totalUsers: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
+  // Debounce search term
   useEffect(() => {
-    fetchUsers();
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch users when search term changes (debounced)
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) return; // Only trigger when debounced value matches current
+    fetchUsers(true); // true = isSearching
+  }, [debouncedSearchTerm]);
+
+  // Fetch users when other filters change
+  useEffect(() => {
+    fetchUsers(false); // false = not searching
+  }, [currentPage, pageSize, roleFilter, institutionFilter]);
+
+  // Initial load
+  useEffect(() => {
     fetchInstitutions();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isSearch = false) => {
     try {
-      const response = await fetch("/api/users");
+      if (isSearch) {
+        setIsSearching(true);
+      } else {
+        setIsLoading(true);
+      }
+      
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+        search: debouncedSearchTerm,
+        role: roleFilter === "all" ? "" : roleFilter,
+        institution: institutionFilter === "all" ? "" : institutionFilter,
+      });
+
+      const response = await fetch(`/api/users?${params}`);
       if (response.ok) {
-        const usersData = await response.json();
-        setUsers(usersData);
+        const data = await response.json();
+        setUsers(data.users);
+        setPagination(data.pagination);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
-      setIsLoading(false);
+      if (isSearch) {
+        setIsSearching(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -68,24 +126,87 @@ export default function UsersManagement() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.alias?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = roleFilter === "all" || 
-                       (roleFilter === "admin" && user.isAdmin) ||
-                       (roleFilter === "teacher" && user.isTeacher) ||
-                       (roleFilter === "student" && !user.isAdmin && !user.isTeacher);
-    
-    const matchesInstitution = institutionFilter === "all" || 
-                              user.institution_id?.toString() === institutionFilter;
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    setSelectedUsers([]); // Clear selection when changing pages
+  };
 
-    return matchesSearch && matchesRole && matchesInstitution;
-  });
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(parseInt(newPageSize));
+    setCurrentPage(1); // Reset to first page when changing page size
+    setSelectedUsers([]); // Clear selection
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+    setSelectedUsers([]); // Clear selection
+  };
+
+  const handleRoleFilterChange = (value) => {
+    setRoleFilter(value);
+    setCurrentPage(1); // Reset to first page when filtering
+    setSelectedUsers([]); // Clear selection
+  };
+
+  const handleInstitutionFilterChange = (value) => {
+    setInstitutionFilter(value);
+    setCurrentPage(1); // Reset to first page when filtering
+    setSelectedUsers([]); // Clear selection
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedUsers(users.map(user => user.id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleSelectUser = (userId, checked) => {
+    if (checked) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+    }
+  };
 
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setIsEditModalOpen(true);
+  };
+
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/users/${userToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await fetchUsers(false);
+        setIsDeleteModalOpen(false);
+        setUserToDelete(null);
+        // Remove from selected users if it was selected
+        setSelectedUsers(prev => prev.filter(id => id !== userToDelete.id));
+      } else {
+        const error = await response.json();
+        console.error("Failed to delete user:", error);
+        alert("Failed to delete user. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Error deleting user. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSaveUser = async (updatedUser) => {
@@ -99,7 +220,7 @@ export default function UsersManagement() {
       });
 
       if (response.ok) {
-        await fetchUsers(); // Refresh the list
+        await fetchUsers(false);
         setIsEditModalOpen(false);
         setSelectedUser(null);
       }
@@ -119,7 +240,7 @@ export default function UsersManagement() {
       });
 
       if (response.ok) {
-        await fetchUsers(); // Refresh the list
+        await fetchUsers(false);
         setIsAddModalOpen(false);
       } else {
         const error = await response.json();
@@ -131,7 +252,6 @@ export default function UsersManagement() {
   };
 
   const handleBulkImport = async (usersData) => {
-    setIsImporting(true);
     try {
       const response = await fetch("/api/users/bulk", {
         method: "POST",
@@ -142,64 +262,63 @@ export default function UsersManagement() {
       });
 
       if (response.ok) {
-        await fetchUsers(); // Refresh the list
+        await fetchUsers(false);
         setIsImportModalOpen(false);
-        setImportFile(null);
-        setImportPreview([]);
       } else {
         const error = await response.json();
         console.error("Import failed:", error);
       }
     } catch (error) {
       console.error("Error importing users:", error);
-    } finally {
-      setIsImporting(false);
     }
   };
 
   const getRoleBadge = (user) => {
-    if (user.isAdmin) return <Badge variant="destructive">Admin</Badge>;
-    if (user.isTeacher) return <Badge variant="default">Teacher</Badge>;
-    return <Badge variant="secondary">Student</Badge>;
+    if (user.isAdmin) return <Badge variant="destructive" className="text-xs">Admin</Badge>;
+    if (user.isTeacher) return <Badge variant="default" className="text-xs">Teacher</Badge>;
+    return <Badge variant="secondary" className="text-xs">Student</Badge>;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleDateString();
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading users...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-sm">Loading users...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+      <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">Users Management</h1>
-          <p className="text-muted-foreground text-sm lg:text-base">
+          <h1 className="text-2xl font-bold tracking-tight">Users Management</h1>
+          <p className="text-muted-foreground">
             Manage all users, their roles, and permissions
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
           <Button 
-            size="sm" 
-            className="w-full sm:w-auto"
             onClick={() => setIsAddModalOpen(true)}
+            className="w-full sm:w-auto"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Add User
           </Button>
           <Button 
             variant="outline" 
-            size="sm" 
-            className="w-full sm:w-auto"
             onClick={() => setIsImportModalOpen(true)}
+            className="w-full sm:w-auto"
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             Import Users
           </Button>
         </div>
@@ -207,36 +326,30 @@ export default function UsersManagement() {
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="p-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="search">Search Users</Label>
+              <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
-                  placeholder="Search by name or alias..."
+                  placeholder="Search users..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-8"
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="role-filter">Role</Label>
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by role" />
+              <Label htmlFor="role">Role</Label>
+              <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="All roles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="all">All roles</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
@@ -245,13 +358,13 @@ export default function UsersManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="institution-filter">Institution</Label>
-              <Select value={institutionFilter} onValueChange={setInstitutionFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by institution" />
+              <Label htmlFor="institution">Institution</Label>
+              <Select value={institutionFilter} onValueChange={handleInstitutionFilterChange}>
+                <SelectTrigger id="institution">
+                  <SelectValue placeholder="All institutions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Institutions</SelectItem>
+                  <SelectItem value="all">All institutions</SelectItem>
                   {institutions.map((institution) => (
                     <SelectItem key={institution.id} value={institution.id.toString()}>
                       {institution.name}
@@ -260,71 +373,162 @@ export default function UsersManagement() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="page-size">Items per page</Label>
+              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <SelectTrigger id="page-size">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Users List */}
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>
-            All registered users on the platform
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-3 border rounded-md hover:bg-gray-50 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-medium">
-                      {user.name?.charAt(0) || 'U'}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-medium text-sm truncate">{user.name}</h3>
-                      {getRoleBadge(user)}
-                    </div>
-                    <div className="flex items-center space-x-3 text-xs text-muted-foreground mt-0.5">
-                      {user.alias && <span>@{user.alias}</span>}
-                      <span>{user.institution?.name || 'No institution'}</span>
-                      <span>{user.solvedChallenges} solved</span>
-                      <span>{user.points} pts</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleEditUser(user)}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-            
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-6">
-                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No users found matching your criteria</p>
-              </div>
+          <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <div>
+              <CardTitle>Users ({pagination.totalUsers} total)</CardTitle>
+              {selectedUsers.length > 0 && (
+                <CardDescription>
+                  {selectedUsers.length} user(s) selected
+                </CardDescription>
+              )}
+            </div>
+            {selectedUsers.length > 0 && (
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Selected
+              </Button>
             )}
           </div>
+        </CardHeader>
+        <CardContent>
+          {isSearching ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-sm text-muted-foreground">Searching...</p>
+              </div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No users found matching your criteria</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox 
+                          checked={selectedUsers.length === users.length && users.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead className="min-w-[120px] sm:min-w-[200px]">User</TableHead>
+                      <TableHead className="min-w-[60px] sm:min-w-[100px]">Role</TableHead>
+                      <TableHead className="min-w-[100px] hidden sm:table-cell">Institution</TableHead>
+                      <TableHead className="min-w-[70px] hidden md:table-cell">Stats</TableHead>
+                      <TableHead className="min-w-[90px] hidden lg:table-cell">Last Login</TableHead>
+                      <TableHead className="w-12 sm:w-20">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedUsers.includes(user.id)}
+                            onCheckedChange={(checked) => handleSelectUser(user.id, checked)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-xs font-medium">
+                                {user.name?.charAt(0) || 'U'}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-xs truncate">{user.name}</p>
+                              <p className="text-xs text-muted-foreground truncate hidden sm:block">{user.email}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getRoleBadge(user)}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <p className="text-xs text-muted-foreground">
+                            {user.institution?.name || 'None'}
+                          </p>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-xs text-muted-foreground">
+                            <p>{user.solvedChallenges} solved</p>
+                            <p>{user.points} pts</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(user.last_login)}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 sm:h-6 sm:w-6 p-0"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 sm:h-6 sm:w-6 p-0 text-red-500 hover:text-red-700"
+                              onClick={() => handleDeleteUser(user)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <Card>
+          <CardContent className="p-0">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={handlePageChange}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add User Modal */}
       {isAddModalOpen && (
@@ -360,11 +564,23 @@ export default function UsersManagement() {
           onImport={handleBulkImport}
           onClose={() => {
             setIsImportModalOpen(false);
-            setImportFile(null);
-            setImportPreview([]);
           }}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Delete User"
+        message={`Are you sure you want to delete "${userToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete User"
+        onConfirm={confirmDeleteUser}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
+        isLoading={isDeleting}
+      />
     </div>
   );
 } 

@@ -24,10 +24,6 @@ export default function LessonDetail() {
   const params = useParams();
   const router = useRouter();
 
-  useEffect(() => {
-    fetchLesson();
-  }, [fetchLesson]);
-
   const fetchLesson = useCallback(async () => {
     try {
       const response = await fetch(`/api/lessons/${params.id}`);
@@ -44,6 +40,10 @@ export default function LessonDetail() {
       setLoading(false);
     }
   }, [params.id]);
+
+  useEffect(() => {
+    fetchLesson();
+  }, [fetchLesson]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {

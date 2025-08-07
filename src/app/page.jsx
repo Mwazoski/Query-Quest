@@ -98,7 +98,7 @@ export default function Home() {
 
       if (response.ok) {
         setSuccess("Login successful! Redirecting...");
-        // Store user data in localStorage or session
+        // Store user data in localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
         // Redirect to main page after a short delay
         setTimeout(() => {
