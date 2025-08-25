@@ -145,8 +145,6 @@ export default function Lessons() {
                         <span>{lesson.creator.name}</span>
                         <span className="hidden lg:inline">•</span>
                         <span>{formatDate(lesson.created_at)}</span>
-                        <span className="hidden lg:inline">•</span>
-                        <span>Order: {lesson.order}</span>
                       </div>
                       <Button size="sm" asChild>
                         <Link href={`/lessons/${lesson.id}`}>

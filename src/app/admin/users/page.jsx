@@ -45,6 +45,8 @@ export default function UsersManagement() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -206,6 +208,40 @@ export default function UsersManagement() {
       alert("Error deleting user. Please try again.");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedUsers.length === 0) return;
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedUsers.length === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const response = await fetch('/api/users/bulk-delete', {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userIds: selectedUsers }),
+      });
+
+      if (response.ok) {
+        setSelectedUsers([]);
+        await fetchUsers(false);
+        setIsBulkDeleteModalOpen(false);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error bulk deleting users:", error);
+      alert("Error deleting users. Please try again.");
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -404,9 +440,14 @@ export default function UsersManagement() {
               )}
             </div>
             {selectedUsers.length > 0 && (
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full sm:w-auto"
+                onClick={handleBulkDelete}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Selected
+                Delete Selected ({selectedUsers.length})
               </Button>
             )}
           </div>
@@ -580,6 +621,19 @@ export default function UsersManagement() {
           setUserToDelete(null);
         }}
         isLoading={isDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isBulkDeleteModalOpen}
+        title="Delete Selected Users"
+        message={`Are you sure you want to delete ${selectedUsers.length} selected user(s)? This action cannot be undone.`}
+        confirmText="Delete Users"
+        onConfirm={confirmBulkDelete}
+        onCancel={() => {
+          setIsBulkDeleteModalOpen(false);
+        }}
+        isLoading={isBulkDeleting}
       />
     </div>
   );

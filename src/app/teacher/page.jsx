@@ -56,30 +56,34 @@ export default function TeacherDashboard() {
   const fetchInstitutionData = async (institutionId) => {
     try {
       // Fetch students from the same institution
-      const studentsResponse = await fetch(`/api/users?institution=${institutionId}`);
-      const students = studentsResponse.ok ? await studentsResponse.json() : [];
+      const studentsResponse = await fetch(`/api/users?institution=${institutionId}&limit=1000`);
+      const studentsData = studentsResponse.ok ? await studentsResponse.json() : [];
+      const students = Array.isArray(studentsData) ? studentsData : (studentsData.users || []);
       
       // Filter only students (not teachers or admins)
       const actualStudents = students.filter(s => !s.isTeacher && !s.isAdmin);
       
       // Calculate statistics
       const totalStudents = actualStudents.length;
-      const activeStudents = actualStudents.filter(s => s.solvedChallenges > 0).length;
+      const activeStudents = actualStudents.filter(s => (s.solvedChallenges || 0) > 0).length;
       const averagePoints = totalStudents > 0 
-        ? Math.round(actualStudents.reduce((sum, s) => sum + s.points, 0) / totalStudents)
+        ? Math.round(actualStudents.reduce((sum, s) => sum + (s.points || 0), 0) / totalStudents)
         : 0;
       
       // Fetch challenges
-      const challengesResponse = await fetch("/api/challenges");
-      const challenges = challengesResponse.ok ? await challengesResponse.json() : [];
+      const challengesResponse = await fetch("/api/challenges?limit=1000");
+      const challengesData = challengesResponse.ok ? await challengesResponse.json() : [];
+      const challenges = Array.isArray(challengesData) ? challengesData : (challengesData.challenges || []);
       
       // Get top students
       const topStudents = actualStudents
-        .sort((a, b) => b.points - a.points)
+        .slice() // shallow copy before sort
+        .sort((a, b) => (b.points || 0) - (a.points || 0))
         .slice(0, 5);
       
       // Get recent challenges
       const recentChallenges = challenges
+        .slice()
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 5);
 

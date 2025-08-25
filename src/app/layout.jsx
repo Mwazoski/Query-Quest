@@ -1,6 +1,7 @@
 import localFont from "next/font/local";
 import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
+import AuthenticatedChatbot from "@/components/AuthenticatedChatbot";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
         <AuthGuard>
           {children}
         </AuthGuard>
+        <AuthenticatedChatbot />
       </body>
     </html>
   );

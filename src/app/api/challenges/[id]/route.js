@@ -1,9 +1,37 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(request, { params }) {
+  try {
+    const { id } = params;
+
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        institution: true,
+      },
+    });
+
+    if (!challenge) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(challenge);
+  } catch (error) {
+    console.error("Error fetching challenge:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch challenge" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(request, { params }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const data = await request.json();
     const { 
       statement, 
@@ -88,6 +116,36 @@ export async function PUT(request, { params }) {
     console.error("Error updating challenge:", error);
     return NextResponse.json(
       { error: "Failed to update challenge" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    const { id } = params;
+
+    const existingChallenge = await prisma.challenge.findUnique({
+      where: { id: parseInt(id) },
+      select: { id: true },
+    });
+
+    if (!existingChallenge) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.challenge.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return NextResponse.json({ message: "Challenge deleted" });
+  } catch (error) {
+    console.error("Error deleting challenge:", error);
+    return NextResponse.json(
+      { error: "Failed to delete challenge" },
       { status: 500 }
     );
   }

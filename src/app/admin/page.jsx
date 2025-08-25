@@ -20,6 +20,7 @@ import Link from "next/link";
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [challenges, setChallenges] = useState([]);
+  const [challengeStats, setChallengeStats] = useState({ totalChallenges: 0 });
   const [institutions, setInstitutions] = useState([]);
   const [contactRequests, setContactRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,21 +28,25 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [usersRes, challengesRes, institutionsRes, contactRequestsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/users?limit=1000`),
-          fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/challenges`),
-          fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/institutions`),
-          fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/contact-requests`)
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const [usersRes, challengesRes, challengesStatsRes, institutionsRes, contactRequestsRes] = await Promise.all([
+          fetch(`${baseUrl}/api/users?limit=1000`),
+          fetch(`${baseUrl}/api/challenges?limit=5`),
+          fetch(`${baseUrl}/api/challenges/stats`),
+          fetch(`${baseUrl}/api/institutions`),
+          fetch(`${baseUrl}/api/contact-requests`)
         ]);
 
         const usersData = await usersRes.json();
         const challengesData = await challengesRes.json();
+        const challengesStatsData = await challengesStatsRes.json();
         const institutionsData = await institutionsRes.json();
         const contactRequestsData = await contactRequestsRes.json();
 
-        // Handle new API response format for users
+        // Handle new API response formats
         setUsers(usersData.users || usersData);
-        setChallenges(challengesData);
+        setChallenges(challengesData.challenges || challengesData);
+        setChallengeStats(challengesStatsData || { totalChallenges: (challengesData.challenges || challengesData)?.length || 0 });
         setInstitutions(institutionsData);
         setContactRequests(contactRequestsData);
       } catch (error) {
@@ -67,7 +72,7 @@ export default function AdminDashboard() {
 
   // Calculate statistics
   const totalUsers = users.length;
-  const totalChallenges = challenges.length;
+  const totalChallenges = challengeStats.totalChallenges || challenges.length;
   const totalInstitutions = institutions.length;
   const totalContactRequests = contactRequests.length;
   const pendingContactRequests = contactRequests.filter(req => req.status === 'pending').length;
@@ -182,7 +187,7 @@ export default function AdminDashboard() {
               </Link>
             </Button>
             <Button asChild variant="outline" className="flex-1 justify-start text-xs h-8">
-              <Link href="/admin/challenges">
+              <Link href="/admin/challenges/create">
                 <Plus className="h-3 w-3 mr-2" />
                 Create Challenge
               </Link>

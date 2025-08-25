@@ -41,12 +41,13 @@ export default function Challenges() {
           throw new Error('Failed to fetch challenges');
         }
         const data = await response.json();
-        setChallenges(data);
-        
+        const challengesArray = Array.isArray(data) ? data : (data.challenges || []);
+        setChallenges(challengesArray);
+
         // Calculate stats
-        const total = data.length;
-        const totalSolves = data.reduce((sum, challenge) => sum + challenge.solves, 0);
-        const averageScore = total > 0 ? Math.round(data.reduce((sum, challenge) => sum + challenge.score, 0) / total) : 0;
+        const total = challengesArray.length;
+        const totalSolves = challengesArray.reduce((sum, challenge) => sum + (challenge.solves || 0), 0);
+        const averageScore = total > 0 ? Math.round(challengesArray.reduce((sum, challenge) => sum + (challenge.score || 0), 0) / total) : 0;
         
         setStats({
           total,
@@ -166,7 +167,50 @@ export default function Challenges() {
               </div>
             </div>
           ) : (
-            <ChallengeCard challenges={challenges} />
+            <div className="space-y-8">
+              {/* Group challenges by level */}
+              {[1, 2, 3, 4, 5].map(level => {
+                const levelChallenges = challenges.filter(challenge => challenge.level === level);
+                if (levelChallenges.length === 0) return null;
+
+                return (
+                  <div key={level} className="space-y-4">
+                    {/* Level Header */}
+                    <div className="flex items-center gap-3">
+                      <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        level === 1 ? 'bg-green-100 text-green-800' :
+                        level === 2 ? 'bg-blue-100 text-blue-800' :
+                        level === 3 ? 'bg-yellow-100 text-yellow-800' :
+                        level === 4 ? 'bg-orange-100 text-orange-800' :
+                        level === 5 ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        Level {level}
+                      </div>
+                      <div className="h-px bg-gray-200 flex-1"></div>
+                      <span className="text-sm text-gray-500">
+                        {levelChallenges.length} challenge{levelChallenges.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    {/* Challenges for this level */}
+                    <ChallengeCard challenges={levelChallenges} />
+                  </div>
+                );
+              })}
+
+              {/* Show message if no challenges at all */}
+              {challenges.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">No Challenges Available</h3>
+                    <p className="text-gray-600">
+                      There are no challenges available for your institution at the moment.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -19,7 +19,21 @@ import {
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Get initial sidebar state - always open on desktop, persistent across navigation
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const isDesktop = window.innerWidth >= 1024;
+      // On desktop, always start open and save this state
+      if (isDesktop) {
+        localStorage.setItem('admin-sidebar-open', 'true');
+        return true;
+      }
+      // On mobile, use saved state or default to closed
+      const saved = localStorage.getItem('admin-sidebar-open');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
@@ -29,6 +43,46 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     fetchUserData();
+  }, []);
+
+  // Ensure sidebar stays open on desktop during navigation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isDesktop = window.innerWidth >= 1024;
+      if (isDesktop && !isSidebarOpen) {
+        setIsSidebarOpen(true);
+        localStorage.setItem('admin-sidebar-open', 'true');
+      }
+    }
+  }, [pathname, isSidebarOpen]);
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin-sidebar-open', JSON.stringify(isSidebarOpen));
+    }
+  }, [isSidebarOpen]);
+
+  // Handle window resize to maintain appropriate sidebar state
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        const isDesktop = window.innerWidth >= 1024;
+
+        if (isDesktop) {
+          // Always open on desktop and save state
+          setIsSidebarOpen(true);
+          localStorage.setItem('admin-sidebar-open', 'true');
+        } else {
+          // On mobile, use saved state or close
+          const savedState = localStorage.getItem('admin-sidebar-open');
+          setIsSidebarOpen(savedState ? JSON.parse(savedState) : false);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const fetchUserData = async () => {
@@ -127,20 +181,15 @@ export default function AdminLayout({ children }) {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="text-lg font-semibold">Admin Panel</span>
-            </div>
+        <div className="flex flex-col h-screen">
+          {/* Mobile close button */}
+          <div className="flex justify-end p-4 border-b lg:hidden">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => setIsSidebarOpen(false)}
             >
               <X className="h-4 w-4" />
@@ -162,8 +211,8 @@ export default function AdminLayout({ children }) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          {/* Navigation - Scrollable */}
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {adminNavItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -184,8 +233,8 @@ export default function AdminLayout({ children }) {
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t">
+          {/* Footer - Always at bottom */}
+          <div className="p-4 border-t mt-auto">
             <Button variant="ghost" asChild className="w-full justify-start">
               <Link href="/main" className="flex items-center space-x-3">
                 <Home className="h-4 w-4" />
@@ -197,7 +246,7 @@ export default function AdminLayout({ children }) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 min-h-screen bg-gray-50">
+      <div className="flex-1 min-h-screen bg-gray-50 overflow-auto lg:ml-64">
         {/* Top bar */}
         <div className="bg-white shadow-sm border-b px-4 py-3 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -209,10 +258,14 @@ export default function AdminLayout({ children }) {
             >
               <Menu className="h-4 w-4" />
             </Button>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between flex-1">
+              <span className="text-sm text-muted-foreground flex-1">
                 Welcome back, {user.name}
               </span>
+              <div className="flex items-center space-x-2 ml-4">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-gray-700">Admin Panel</span>
+              </div>
             </div>
           </div>
         </div>
