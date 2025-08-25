@@ -23,7 +23,7 @@ Then edit `.env.local` with your actual values:
 DATABASE_URL="file:./dev.db"
 
 # OpenAI Configuration
-OPENAI_API_KEY=sk-your-actual-openai-api-key-here
+OPENAI_API_KEY=your-api-key-here
 OPENAI_MODEL=gpt-4-turbo-preview
 OPENAI_MAX_TOKENS=1000
 OPENAI_TEMPERATURE=0.7

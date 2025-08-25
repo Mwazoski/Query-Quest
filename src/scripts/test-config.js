@@ -19,14 +19,14 @@ console.log(`✅ Conversation Timeout: ${CHAT_CONFIG.CONVERSATION_TIMEOUT}ms (${
 
 // Test API key configuration
 console.log('\n🔑 API Key Status:');
-if (CHAT_CONFIG.OPENAI_API_KEY === 'your_openai_api_key_here') {
-  console.log('❌ API Key: Not configured (using default placeholder)');
+if (!CHAT_CONFIG.OPENAI_API_KEY) {
+  console.log('❌ API Key: Not configured');
   console.log('💡 To configure:');
   console.log('   1. Get your OpenAI API key from https://platform.openai.com');
   console.log('   2. Create a .env.local file in your project root');
-  console.log('   3. Add: OPENAI_API_KEY=sk-your-actual-key-here');
+  console.log('   3. Add: OPENAI_API_KEY=your-api-key-here');
 } else if (CHAT_CONFIG.OPENAI_API_KEY && CHAT_CONFIG.OPENAI_API_KEY.startsWith('sk-')) {
-  console.log('✅ API Key: Configured (starts with sk-)');
+  console.log('✅ API Key: Configured');
 } else {
   console.log('⚠️  API Key: Partially configured (check format)');
 }
@@ -79,7 +79,7 @@ console.log('- Max history 10-15: Prevents token limit issues');
 
 // Next steps
 console.log('\n🚀 Next Steps:');
-if (CHAT_CONFIG.OPENAI_API_KEY === 'your_openai_api_key_here') {
+if (!CHAT_CONFIG.OPENAI_API_KEY) {
   console.log('1. Configure your OpenAI API key');
   console.log('2. Test the chatbot with: node scripts/test-chatbot.js');
   console.log('3. Customize the system prompt in config/chat-config.js');

@@ -53,7 +53,7 @@ async function testChatbot() {
   console.log(`- Max Tokens: ${CHAT_CONFIG.OPENAI_MAX_TOKENS}`);
   console.log(`- Temperature: ${CHAT_CONFIG.OPENAI_TEMPERATURE}`);
   console.log(`- Max History: ${CHAT_CONFIG.MAX_HISTORY_LENGTH}`);
-  console.log(`- API Key: ${CHAT_CONFIG.OPENAI_API_KEY === 'your_openai_api_key_here' ? '❌ Not configured' : '✅ Configured'}`);
+  console.log(`- API Key: ${CHAT_CONFIG.OPENAI_API_KEY ? '✅ Configured' : '❌ Not configured'}`);
   console.log('');
 
   // Test initialization

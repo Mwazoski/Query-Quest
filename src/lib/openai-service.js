@@ -15,7 +15,7 @@ class OpenAIService {
     if (this.initialized) return true;
 
     const apiKey = CHAT_CONFIG.OPENAI_API_KEY;
-    if (!apiKey || apiKey === 'your_openai_api_key_here') {
+    if (!apiKey) {
       console.error('OpenAI API key not configured. Please set OPENAI_API_KEY in your environment variables.');
       return false;
     }
