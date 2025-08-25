@@ -3,7 +3,7 @@
 
 export const CHAT_CONFIG = {
   // OpenAI Configuration
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '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',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
   OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
   OPENAI_MAX_TOKENS: parseInt(process.env.OPENAI_MAX_TOKENS) || 1000,
   OPENAI_TEMPERATURE: parseFloat(process.env.OPENAI_TEMPERATURE) || 0.7,
